@@ -3,8 +3,7 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-
-    <title reclang="XvFp">Recorder Demo</title>
+    <title>Recorder Demo</title>
 </head>
 
 <body>
@@ -13,7 +12,6 @@
 <script src="src/recorder.mp3.min.js"></script>
 
 <!-- 【1.3】引入可选的扩展支持项，如果不需要这些扩展功能可以不引入。  Import optional extended support items. If you do not need these extended functions, you do not need to import them. -->
-<script src="src/frequency.histogram.view.js"></script>
 <script src="src/lib.fft.js"></script>
 
 <!-- 【2】构建界面  Build the web interface  -->
@@ -39,18 +37,6 @@
 				<button onclick="recLocalDown()">本地下载</button>
 			</span>
         </div>
-
-        <!-- 波形绘制区域  Waveform drawing area -->
-        <div style="padding-top:5px">
-            <div style="border:1px solid #ccc;display:inline-block;vertical-align:bottom">
-                <div style="height:100px;width:300px;" class="recwave"></div>
-            </div>
-
-            <div style="height:40px;width:300px;margin-top:5px;display:inline-block;vertical-align:bottom;background:#999;position:relative;">
-                <div class="recpowerx" style="height:40px;background:#0B1;position:absolute;"></div>
-                <div class="recpowert" style="padding-left:50px; line-height:40px; position: relative;"></div>
-            </div>
-        </div>
     </div>
 
     <!-- 日志输出区域  Log output area -->
@@ -62,11 +48,10 @@
 
 <!-- 【3】实现录音逻辑  Implement recording logic -->
 <script>
-    var rec, processTime, wave, recBlob;
+    var rec, processTime, recBlob;
     /**调用open打开录音请求好录音权限  Call open to open the recording and request the recording permission**/
     var recOpen = function () {//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
         rec = null;
-        wave = null;
         recBlob = null;
         var newRec = Recorder({
             type: "mp3", sampleRate: 16000, bitRate: 16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
@@ -75,17 +60,11 @@
                 document.querySelector(".recpowerx").style.width = powerLevel + "%";
                 document.querySelector(".recpowert").innerText = formatMs(bufferDuration, 1) + " / " + powerLevel;
                 processTime = Date.now();
-
-                //可视化图形绘制
-                wave.input(buffers[buffers.length - 1], powerLevel, bufferSampleRate);
             }
         });
 
         newRec.open(function () {//打开麦克风授权获得相关资源
             rec = newRec;
-
-            //此处创建这些音频可视化图形绘制浏览器支持妥妥的
-            wave = Recorder.FrequencyHistogramView({elem: ".recwave"});
 
             reclog(Html_$T("GVCa::已打开录音，可以点击录制开始录音了"), 2);
         }, function (msg, isUserNotAllow) {//用户拒绝未授权或不支持
