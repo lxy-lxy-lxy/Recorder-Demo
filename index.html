@@ -39,7 +39,18 @@
 				<button onclick="recLocalDown()">本地下载</button>
 			</span>
         </div>
-        123
+
+        <!-- 波形绘制区域  Waveform drawing area -->
+        <div style="padding-top:5px">
+            <div style="border:1px solid #ccc;display:inline-block;vertical-align:bottom">
+                <div style="height:100px;width:300px;" class="recwave"></div>
+            </div>
+
+            <div style="height:40px;width:300px;margin-top:5px;display:inline-block;vertical-align:bottom;background:#999;position:relative;">
+                <div class="recpowerx" style="height:40px;background:#0B1;position:absolute;"></div>
+                <div class="recpowert" style="padding-left:50px; line-height:40px; position: relative;"></div>
+            </div>
+        </div>
     </div>
 
     <!-- 日志输出区域  Log output area -->
