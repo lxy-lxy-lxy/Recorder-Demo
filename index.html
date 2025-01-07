@@ -39,6 +39,7 @@
 				<button onclick="recLocalDown()">本地下载</button>
 			</span>
         </div>
+        123
     </div>
 
     <!-- 日志输出区域  Log output area -->
@@ -63,11 +64,18 @@
                 document.querySelector(".recpowerx").style.width = powerLevel + "%";
                 document.querySelector(".recpowert").innerText = formatMs(bufferDuration, 1) + " / " + powerLevel;
                 processTime = Date.now();
+
+                //可视化图形绘制
+                wave.input(buffers[buffers.length - 1], powerLevel, bufferSampleRate);
             }
         });
 
         newRec.open(function () {//打开麦克风授权获得相关资源
             rec = newRec;
+
+            //此处创建这些音频可视化图形绘制浏览器支持妥妥的
+            wave = Recorder.FrequencyHistogramView({elem: ".recwave"});
+
             reclog(Html_$T("GVCa::已打开录音，可以点击录制开始录音了"), 2);
         }, function (msg, isUserNotAllow) {//用户拒绝未授权或不支持
             reclog((isUserNotAllow ? "UserNotAllow, " : "") + Html_$T("TOOV::打开录音失败：") + msg, 1);
