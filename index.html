@@ -4,14 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
-    <title reclang="XvFp">Recorder Demo</title>
-
-    <script> //CDN URL 可删掉，选择线路用的
-    var GitPageBase = "https://lxy-lxy-lxy.github.io/Recorder-Demo/";
-    document.write('<base href="' + GitPageBase + '" />');
-    document.write('<link rel="shortcut icon" type="image/png" href="' + GitPageBase + 'assets/icon.png">');
-    </script>
-
+    <title>Recorder Demo</title>
 </head>
 
 <body>
@@ -20,7 +13,9 @@
 
 另外：[1.1]、[1.2]可以合并为使用"/recorder.mp3.min.js"，这个文件为压缩版大幅减小文件体积，已经包含了这3个源码文件
 -->
-<script src="src/engine/recorder.mp3.min.js"></script>
+<script src="src/recorder.mp3.min.js"></script>
+<script src="src/beta-amr.js"></script>
+<script src="src/wav.js"></script>
 
 <!-- 【1.1】引入核心文件  Import core file -->
 <!--<script src="src/recorder-core.js"></script>-->
@@ -29,48 +24,32 @@
 <!--<script src="src/engine/mp3.js"></script>-->
 <!--<script src="src/engine/mp3-engine.js"></script>-->
 
-<!-- 【1.3】引入可选的扩展支持项，如果不需要这些扩展功能可以不引入。  Import optional extended support items. If you do not need these extended functions, you do not need to import them. -->
-<script src="src/extensions/frequency.histogram.view.js"></script>
-<script src="src/extensions/lib.fft.js"></script>
-
-<script>var bEL = document.querySelector("base");
-if (bEL) bEL.parentNode.removeChild(bEL);//清除CDN地址  Clear CDN URLs</script>
-
-
 <!-- 【2】构建界面  Build the web interface  -->
 <div class="main">
     <div class="mainBox">
         <!-- 按钮控制区域  Control button area -->
         <div class="pd btns">
             <div>
-                <button onclick="recOpen()" style="margin-right:10px" reclang="2KqN">打开录音,请求权限</button>
-                <button onclick="recClose()" style="margin-right:0" reclang="E0NB">关闭录音,释放资源</button>
+                <button onclick="recOpen()" style="margin-right:10px">打开录音,请求权限</button>
+                <button onclick="recClose()" style="margin-right:0">关闭录音,释放资源</button>
             </div>
 
-            <button onclick="recStart()" reclang="nlQN">录制</button>
-            <button onclick="recStop()" style="margin-right:80px" reclang="cEa1">停止</button>
+            <button onclick="recStart()">录制</button>
+            <button onclick="recStop()" style="margin-right:80px">停止</button>
 
             <span style="display: inline-block;">
-				<button onclick="recPause()" reclang="wQFS">暂停</button>
-				<button onclick="recResume()" reclang="hHDO">继续</button>
+				<button onclick="recPause()">暂停</button>
+				<button onclick="recResume()">继续</button>
 			</span>
             <span style="display: inline-block;">
-				<button onclick="recPlay()" reclang="0TJm">播放</button>
-				<button onclick="recUpload()" reclang="DOAp">上传</button>
-				<button onclick="recLocalDown()" reclang="GTE7">本地下载</button>
+				<button onclick="recPlay()">播放</button>
+				<button onclick="recUpload()">上传</button>
+				<button onclick="recLocalDown()">本地下载</button>
 			</span>
-        </div>
-
-        <!-- 波形绘制区域  Waveform drawing area -->
-        <div style="padding-top:5px">
-            <div style="border:1px solid #ccc;display:inline-block;vertical-align:bottom">
-                <div style="height:100px;width:300px;" class="recwave"></div>
-            </div>
-
-            <div style="height:40px;width:300px;margin-top:5px;display:inline-block;vertical-align:bottom;background:#999;position:relative;">
-                <div class="recpowerx" style="height:40px;background:#0B1;position:absolute;"></div>
-                <div class="recpowert" style="padding-left:50px; line-height:40px; position: relative;"></div>
-            </div>
+            <span style="display: inline-block;">
+				<input id="amrFile" type="file"/>
+				<button onclick="recAmr()">播放AMR</button>
+			</span>
         </div>
     </div>
 
@@ -83,30 +62,23 @@ if (bEL) bEL.parentNode.removeChild(bEL);//清除CDN地址  Clear CDN URLs</scri
 
 <!-- 【3】实现录音逻辑  Implement recording logic -->
 <script>
-    var rec, processTime, wave, recBlob;
+    var rec, processTime, recBlob;
     /**调用open打开录音请求好录音权限  Call open to open the recording and request the recording permission**/
     var recOpen = function () {//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
         rec = null;
-        wave = null;
         recBlob = null;
         var newRec = Recorder({
-            type: "mp3", sampleRate: 16000, bitRate: 16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
+            type: "amr", sampleRate: 8000, bitRate: 8 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
             , onProcess: function (buffers, powerLevel, bufferDuration, bufferSampleRate, newBufferIdx, asyncEnd) {
                 //录音实时回调，大约1秒调用12次本回调
                 document.querySelector(".recpowerx").style.width = powerLevel + "%";
                 document.querySelector(".recpowert").innerText = formatMs(bufferDuration, 1) + " / " + powerLevel;
                 processTime = Date.now();
-
-                //可视化图形绘制
-                wave.input(buffers[buffers.length - 1], powerLevel, bufferSampleRate);
             }
         });
 
         newRec.open(function () {//打开麦克风授权获得相关资源
             rec = newRec;
-
-            //此处创建这些音频可视化图形绘制浏览器支持妥妥的
-            wave = Recorder.FrequencyHistogramView({elem: ".recwave"});
 
             reclog(Html_$T("GVCa::已打开录音，可以点击录制开始录音了"), 2);
         }, function (msg, isUserNotAllow) {//用户拒绝未授权或不支持
@@ -123,9 +95,37 @@ if (bEL) bEL.parentNode.removeChild(bEL);//清除CDN地址  Clear CDN URLs</scri
         } else {
             reclog(Html_$T("VOOw::未打开录音"), 1);
         }
-        ;
     };
 
+    // amr转mp3播放
+    function recAmr() {
+        const amrBlob = document.getElementById("amrFile").files[0];
+        var set = {
+            type: "mp3"
+            , sampleRate: 16000
+            , bitRate: 16
+        };
+        var reader = new FileReader();
+        reader.onloadend = function () {
+            var base64 = (/.+;\s*base64\s*,\s*(.+)$/i.exec(reader.result) || [])[1];
+
+            //数据格式二核心代码，以上代码无关紧要
+            var bstr = atob(base64), n = bstr.length, u8arr = new Uint8Array(n);
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            console.log(u8arr.buffer)
+
+            Recorder.AMR2Other(set, new Blob([u8arr.buffer]), function (
+                // blob, duration, rec
+            ) {
+                reclog(Html_$T("amr as base64 转换成 mp3..."), 1)
+            }, function (msg) {
+                reclog(Html_$T(msg), 1)
+            });
+        };
+        reader.readAsDataURL(amrBlob);
+    }
 
     /**开始录音  Start recording**/
     function recStart() {//打开了录音后才能进行start、stop调用
@@ -153,7 +153,6 @@ if (bEL) bEL.parentNode.removeChild(bEL);//清除CDN地址  Clear CDN URLs</scri
         } else {
             reclog(Html_$T("ajKR::未打开录音"), 1);
         }
-        ;
     };
 
     /**暂停录音  Passing recording**/
@@ -247,7 +246,7 @@ if (bEL) bEL.parentNode.removeChild(bEL);//清除CDN地址  Clear CDN URLs</scri
                 ;
             };
         };
-        reclog(Html_$T("QnSI::开始上传到{1}，请稍候... （你可以先到源码 /assets/node-localServer 目录内执行 npm run start 来运行本地测试服务器）", 0, api));
+        reclog(Html_$T("QnSI::开始上传到{1}，请稍候...", 0, api));
 
         /***方式一：将blob文件转成base64纯文本编码，使用普通application/x-www-form-urlencoded表单上传***/
         var reader = new FileReader();
@@ -383,55 +382,6 @@ if (bEL) bEL.parentNode.removeChild(bEL);//清除CDN地址  Clear CDN URLs</scri
     } else {
         reclog(Html_$T("YzPd::js文件加载失败，请刷新重试！"), "#f00;font-size:50px");
     }
-</script>
-
-<script>
-    //修改a链接的url
-    var els = document.querySelectorAll(".topLinks a");
-    for (var i = 0; i < els.length; i++) {
-        var el = els[i], v = el.getAttribute("href") || "";
-        if (/\.io\/Recorder\/(.*)/i.test(v)) {
-            el.setAttribute("href", GitPageBase + RegExp.$1);
-        }
-    }
-
-    if (/mobile/i.test(navigator.userAgent)) {
-        //移动端加载控制台组件
-        var elem = document.createElement("script");
-        elem.setAttribute("type", "text/javascript");
-        elem.setAttribute("src", GitPageBase + "assets/ztest-vconsole.js");
-        document.body.appendChild(elem);
-        elem.onload = function () {
-            new VConsole();
-        };
-    }
-    ;
-</script>
-
-<!-- 加载打赏挂件 -->
-<script>
-    var donateView = document.createElement("div");
-    document.querySelector(".reclog").appendChild(donateView);
-    DonateWidget({
-        log: function (msg) {
-            reclog(msg)
-        }
-        , mobElem: donateView
-    });
-</script>
-
-<!-- 启用国际化多语言支持 -->
-<script>
-    if (window.PageI18nWidget) {
-        PageI18nWidget({
-            elem: ".i18nBox", rootUrl: GitPageBase
-            , titleKey: "XvFp"
-            , langs: {
-                "en-US": {urls: ["#QuickStart_html/en-US.js", "#widget_donate/en-US.js"]}
-            }
-        });
-    }
-    ;
 </script>
 
 <style>
