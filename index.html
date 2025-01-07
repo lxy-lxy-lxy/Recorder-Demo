@@ -13,16 +13,16 @@
 
 另外：[1.1]、[1.2]可以合并为使用"/recorder.mp3.min.js"，这个文件为压缩版大幅减小文件体积，已经包含了这3个源码文件
 -->
-<script src="src/recorder.mp3.min.js"></script>
-<script src="src/beta-amr.js"></script>
-<script src="src/wav.js"></script>
+<!--<script src="src/recorder.mp3.min.js"></script>-->
 
 <!-- 【1.1】引入核心文件  Import core file -->
-<!--<script src="src/recorder-core.js"></script>-->
+<script src="src/recorder-core.js"></script>
 
 <!--&lt;!&ndash; 【1.2】引入相应格式支持文件；如果需要多个格式支持，把这些格式的编码引擎js文件放到后面统统加载进来即可。  Import the corresponding format support files; if you need multiple format support, put the encoding engine js files of these formats in the back and load them all. &ndash;&gt;-->
-<!--<script src="src/engine/mp3.js"></script>-->
-<!--<script src="src/engine/mp3-engine.js"></script>-->
+<script src="src/mp3.js"></script>
+<script src="src/mp3-engine.js"></script>
+<script src="src/beta-amr.js"></script>
+<script src="src/wav.js"></script>
 
 <!-- 【2】构建界面  Build the web interface  -->
 <div class="main">
