@@ -8,13 +8,21 @@
 </head>
 
 <body>
+<!--
+【1】引入框架文件  Import plugin file   ，注意自己使用时应当自己把源码clone下来，然后通过src="/src/recorder-core.js"引入
 
-<!-- 【1.1】引入核心文件  Import core file -->
+另外：[1.1]、[1.2]可以合并为使用"/recorder.mp3.min.js"，这个文件为压缩版大幅减小文件体积，已经包含了这3个源码文件
+-->
 <script src="src/recorder.mp3.min.js"></script>
 
-<!-- 【1.3】引入可选的扩展支持项，如果不需要这些扩展功能可以不引入。  Import optional extended support items. If you do not need these extended functions, you do not need to import them. -->
-<script src="src/frequency.histogram.view.js"></script>
-<script src="src/lib.fft.js"></script>
+<!-- 【1.1】引入核心文件  Import core file -->
+<!--<script src="src/recorder-core.js"></script>-->
+
+<!--&lt;!&ndash; 【1.2】引入相应格式支持文件；如果需要多个格式支持，把这些格式的编码引擎js文件放到后面统统加载进来即可。  Import the corresponding format support files; if you need multiple format support, put the encoding engine js files of these formats in the back and load them all. &ndash;&gt;-->
+<!--<script src="src/mp3.js"></script>-->
+<!--<script src="src/mp3-engine.js"></script>-->
+<script src="src/beta-amr.js"></script>
+<!--<script src="src/wav.js"></script>-->
 
 <!-- 【2】构建界面  Build the web interface  -->
 <div class="main">
@@ -38,6 +46,10 @@
 				<button onclick="recUpload()">上传</button>
 				<button onclick="recLocalDown()">本地下载</button>
 			</span>
+            <span style="display: inline-block;">
+				<input id="amrFile" type="file"/>
+				<button onclick="recAmr()">转换AMR为MP3</button>
+			</span>
         </div>
     </div>
 
@@ -57,7 +69,9 @@
         recBlob = null;
         var newRec = Recorder({
             type: "mp3", sampleRate: 16000, bitRate: 16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
-            , onProcess: function (buffers, powerLevel, bufferDuration, bufferSampleRate, newBufferIdx, asyncEnd) {
+            , onProcess: function (
+                // buffers, powerLevel, bufferDuration, bufferSampleRate, newBufferIdx, asyncEnd
+            ) {
                 //录音实时回调，大约1秒调用12次本回调
                 processTime = Date.now();
             }
@@ -65,10 +79,34 @@
 
         newRec.open(function () {//打开麦克风授权获得相关资源
             rec = newRec;
+
             reclog(Html_$T("GVCa::已打开录音，可以点击录制开始录音了"), 2);
         }, function (msg, isUserNotAllow) {//用户拒绝未授权或不支持
             reclog((isUserNotAllow ? "UserNotAllow, " : "") + Html_$T("TOOV::打开录音失败：") + msg, 1);
         });
+    };
+
+    Recorder.AMR2Other = function (newSet, amrBlob, True, False) {
+        var reader = new FileReader();
+        reader.onload = function () {
+            var amr = new Uint8Array(reader.result);
+            Recorder.AMR.decode(amr, function (pcm) {
+                var rec = Recorder(newSet).mock(pcm, 8000);
+                rec.stop(function (blob, duration) {
+                    True(blob, duration, rec);
+                }, False);
+            }, False);
+        };
+        reader.readAsArrayBuffer(amrBlob);
+    };
+
+    Recorder.AMREncode = function (newSet, pcm, True, False) {
+        var reader = new FileReader();
+        reader.onload = function () {
+            var data = new Uint8Array(reader.result);
+            Recorder.AMR.encode(data, True, False, 12.2);
+        };
+        reader.readAsArrayBuffer(pcm);
     };
 
 
@@ -80,9 +118,71 @@
         } else {
             reclog(Html_$T("VOOw::未打开录音"), 1);
         }
-        ;
     };
 
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            // 创建一个新的 FileReader 对象
+            const reader = new FileReader();
+            // 读取 File 对象
+            reader.readAsDataURL(file);
+            // 加载完成后
+            reader.onload = function () {
+                // 将读取的数据转换为 base64 编码的字符串
+                const base64String = reader.result.split(",")[1];
+                // 解析为 Promise 对象，并返回 base64 编码的字符串
+                resolve(base64String);
+            };
+
+            // 加载失败时
+            reader.onerror = function () {
+                reject(new Error("Failed to load file"));
+            };
+        });
+    }
+
+    function blobToBase64(blob) {
+        return new Promise(function (resolve) {
+            var reader = new FileReader();
+            reader.onloadend = function () {
+                resolve((/.+;\s*base64\s*,\s*(.+)$/i.exec(reader.result) || [])[1]);
+            };
+            reader.readAsDataURL(blob);
+        });
+    };
+
+    // amr转mp3播放(base64,或直接使用blob)
+    async function recAmr() {
+        const amrBlob = document.getElementById("amrFile").files[0];
+        const data = await fileToBase64(amrBlob)
+        let bstr = atob(data), n = bstr.length, u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        const set = {
+            type: "mp3"
+            , sampleRate: 16000
+            , bitRate: 16
+        };
+
+
+        Recorder.AMR2Other(set, new Blob([u8arr.buffer]), function (
+            blob, duration, rec
+        ) {
+            recBlob = blob
+            recPlay()
+            reclog(Html_$T("amr as base64 转换成 mp3..."), 2);
+        }, function (msg) {
+            reclog(Html_$T(msg), 1);
+        });
+    }
+
+    function base64_to_pcm(base64) {
+        const str = atob(base64);
+        const bytes = new Uint8Array(str.length); //相当于无符号byte[]
+        for (let i = 0; i < bytes.length; i++) bytes[i] = str.charCodeAt(i);
+        return new Int16Array(bytes.buffer); //已还原得到16位pcm数据
+    }
 
     /**开始录音  Start recording**/
     function recStart() {//打开了录音后才能进行start、stop调用
@@ -110,7 +210,6 @@
         } else {
             reclog(Html_$T("ajKR::未打开录音"), 1);
         }
-        ;
     };
 
     /**暂停录音  Passing recording**/
@@ -134,7 +233,6 @@
         } else {
             reclog(Html_$T("Ob6S::未打开录音"), 1);
         }
-        ;
     };
 
     /**结束录音，得到音频文件  Stop recording and get audio files**/
@@ -204,7 +302,7 @@
                 ;
             };
         };
-        reclog(Html_$T("QnSI::开始上传到{1}，请稍候... （你可以先到源码 /assets/node-localServer 目录内执行 npm run start 来运行本地测试服务器）", 0, api));
+        reclog(Html_$T("QnSI::开始上传到{1}，请稍候...", 0, api));
 
         /***方式一：将blob文件转成base64纯文本编码，使用普通application/x-www-form-urlencoded表单上传***/
         var reader = new FileReader();
@@ -235,31 +333,28 @@
 
 
     /**本地下载  Local download**/
-    function recLocalDown() {
+    async function recLocalDown() {
         if (!recBlob) {
             reclog(Html_$T("M86h::请先录音，然后停止后再下载"), 1);
             return;
         }
-        ;
         var cls = ("a" + Math.random()).replace(".", "");
         recdown64.lastCls = cls;
         reclog(Html_$T('vJPl::点击 ') + '<span class="' + cls + '"></span>' + Html_$T('Whtc:: 下载，或复制文本')
             + '<button onclick="recdown64(\'' + cls + '\')">' + Html_$T('XK4l::生成Base64文本') + '</button><span class="' + cls + '_b64"></span>');
 
-        var fileName = "recorder-" + Date.now() + ".mp3";
-        var downA = document.createElement("A");
-        downA.innerHTML = Html_$T("g8Fy::下载 ") + fileName;
-        downA.href = (window.URL || webkitURL).createObjectURL(recBlob);
-        downA.download = fileName;
-        document.querySelector("." + cls).appendChild(downA);
-        if (/mobile/i.test(navigator.userAgent)) {
-            alert(Html_xT(Html_$T("DIEK::因移动端绝大部分国产浏览器未适配Blob Url的下载，所以本demo代码在移动端未调用downA.click()。请尝试点击日志中显示的下载链接下载")));
-        } else {
+        const value = await blobToBase64(recBlob)
+        const pcmData = base64_to_pcm(value)
+        Recorder.AMR.encode(pcmData, (e) => {
+            var fileName = "recorder-" + Date.now() + ".amr";
+            var downA = document.createElement("A");
+            downA.innerHTML = Html_$T("g8Fy::下载 ") + fileName;
+            downA.href = (window.URL || webkitURL).createObjectURL(new Blob([e]));
+            downA.download = fileName;
+            document.querySelector("." + cls).appendChild(downA);
             downA.click();
-        }
-
-        //不用了时需要revokeObjectURL，否则霸占内存
-        //(window.URL||webkitURL).revokeObjectURL(downA.href);
+        }, () => {
+        }, 12.2)
     };
 
     function recdown64(cls) {
@@ -307,7 +402,6 @@
         div.innerHTML = '<div style="color:' + (!color ? "" : color == 1 ? "red" : color == 2 ? "#0b1" : color) + '">[' + t + ']' + s + '</div>';
     };
     window.onerror = function (message, url, lineNo, columnNo, error) {
-        //https://www.cnblogs.com/xianyulaodi/p/6201829.html
         reclog('<span style="color:red">【Uncaught Error】' + message + '<pre>' + "at:" + lineNo + ":" + columnNo + " url:" + url + "\n" + (error && error.stack || Html_$T("kBaF::不能获得错误堆栈")) + '</pre></span>');
     };
 
@@ -341,6 +435,7 @@
         reclog(Html_$T("YzPd::js文件加载失败，请刷新重试！"), "#f00;font-size:50px");
     }
 </script>
+
 <style>
     body {
         word-wrap: break-word;
