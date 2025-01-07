@@ -100,15 +100,6 @@
         reader.readAsArrayBuffer(amrBlob);
     };
 
-    Recorder.AMREncode = function (newSet, pcm, True, False) {
-        var reader = new FileReader();
-        reader.onload = function () {
-            var data = new Uint8Array(reader.result);
-            Recorder.AMR.encode(data, True, False, 12.2);
-        };
-        reader.readAsArrayBuffer(pcm);
-    };
-
 
     /**关闭录音，释放资源  Close recording, release resources**/
     function recClose() {
@@ -141,15 +132,15 @@
         });
     }
 
-    function blobToBase64(blob) {
-        return new Promise(function (resolve) {
-            var reader = new FileReader();
-            reader.onloadend = function () {
-                resolve((/.+;\s*base64\s*,\s*(.+)$/i.exec(reader.result) || [])[1]);
-            };
-            reader.readAsDataURL(blob);
-        });
-    };
+    // function blobToBase64(blob) {
+    //     return new Promise(function (resolve) {
+    //         var reader = new FileReader();
+    //         reader.onloadend = function () {
+    //             resolve((/.+;\s*base64\s*,\s*(.+)$/i.exec(reader.result) || [])[1]);
+    //         };
+    //         reader.readAsDataURL(blob);
+    //     });
+    // };
 
     // amr转mp3播放(base64,或直接使用blob)
     async function recAmr() {
@@ -343,8 +334,7 @@
         reclog(Html_$T('vJPl::点击 ') + '<span class="' + cls + '"></span>' + Html_$T('Whtc:: 下载，或复制文本')
             + '<button onclick="recdown64(\'' + cls + '\')">' + Html_$T('XK4l::生成Base64文本') + '</button><span class="' + cls + '_b64"></span>');
 
-        const value = await blobToBase64(recBlob)
-        const pcmData = base64_to_pcm(value)
+        const pcmData = new Int16Array(await recBlob.arrayBuffer())
         Recorder.AMR.encode(pcmData, (e) => {
             var fileName = "recorder-" + Date.now() + ".amr";
             var downA = document.createElement("A");
@@ -353,7 +343,8 @@
             downA.download = fileName;
             document.querySelector("." + cls).appendChild(downA);
             downA.click();
-        }, () => {
+        }, function (msg) {
+            reclog(Html_$T(msg), 1);
         }, 12.2)
     };
 
