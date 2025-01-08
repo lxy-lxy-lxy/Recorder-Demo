@@ -22,7 +22,6 @@
 <!--<script src="src/mp3.js"></script>-->
 <!--<script src="src/mp3-engine.js"></script>-->
 <script src="src/beta-amr.js"></script>
-<script src="src/wav.js"></script>
 
 <!-- 【2】构建界面  Build the web interface  -->
 <div class="main">
@@ -42,18 +41,17 @@
 				<button onclick="recResume()">继续</button>
 			</span>
             <span style="display: inline-block;">
-				<button onclick="recPlay()">播放</button>
-				<button onclick="recUpload()">上传</button>
+				<button onclick="recAmr(true)">播放</button>
 				<button onclick="recLocalDown()">本地下载</button>
 			</span>
             <span style="display: inline-block;">
 				<input id="amrFile" type="file"/>
 				<button onclick="recAmr()">转换AMR为MP3</button>
 			</span>
-<!--            <span style="display: inline-block;">-->
-<!--				<input id="MP3File" type="file"/>-->
-<!--				<button onclick="recMp3()">转换MP3为AMR</button>-->
-<!--			</span>-->
+            <!--            <span style="display: inline-block;">-->
+            <!--				<input id="MP3File" type="file"/>-->
+            <!--				<button onclick="recMp3()">转换MP3为AMR</button>-->
+            <!--			</span>-->
         </div>
     </div>
 
@@ -136,29 +134,9 @@
         });
     }
 
-    // function blobToBase64(blob) {
-    //     return new Promise(function (resolve) {
-    //         var reader = new FileReader();
-    //         reader.onloadend = function () {
-    //             resolve((/.+;\s*base64\s*,\s*(.+)$/i.exec(reader.result) || [])[1]);
-    //         };
-    //         reader.readAsDataURL(blob);
-    //     });
-    // };
-    function BlobToArrayBuffer(blob) {
-        //return await blob.arrayBuffer();
-        return new Promise(function (resolve) {
-            var reader = new FileReader();
-            reader.onloadend = function () {
-                resolve(reader.result);
-            };
-            reader.readAsArrayBuffer(blob);
-        });
-    };
-
-    // amr转mp3播放(base64,或直接使用blob)
-    async function recAmr() {
-        const amrBlob = document.getElementById("amrFile").files[0];
+    // amr转mp3播放(base64,如需blob自己转换)
+    async function recAmr(useRecBlob) {
+        const amrBlob = useRecBlob ? recBlob : document.getElementById("amrFile").files[0];
         const data = await fileToBase64(amrBlob)
         let bstr = atob(data), n = bstr.length, u8arr = new Uint8Array(n);
         while (n--) {
@@ -180,30 +158,6 @@
         }, function (msg) {
             reclog(Html_$T(msg), 1);
         });
-    }
-
-   /* async function recMp3() {
-        const file = document.getElementById("MP3File").files[0];
-        const blob = new Blob([file], {type: file.type});
-        const pcmData = new Int8Array(await BlobToArrayBuffer(blob))
-        Recorder.AMR.encode(pcmData, (e) => {
-            const href = URL.createObjectURL(new Blob([e]))
-            const fileName = "recorder-" + Date.now() + ".amr";
-            const box = document.createElement('a')
-            box.download = fileName
-            box.href = href
-            box.click()
-
-        }, function (msg) {
-            reclog(Html_$T(msg), 1);
-        }, 12.8)
-    }*/
-
-    function base64_to_pcm(base64) {
-        const str = atob(base64);
-        const bytes = new Uint8Array(str.length); //相当于无符号byte[]
-        for (let i = 0; i < bytes.length; i++) bytes[i] = str.charCodeAt(i);
-        return new Int16Array(bytes.buffer); //已还原得到16位pcm数据
     }
 
     /**开始录音  Start recording**/
@@ -282,7 +236,6 @@
             reclog(Html_$T("tIke::请先录音，然后停止后再播放"), 1);
             return;
         }
-        ;
         var cls = ("a" + Math.random()).replace(".", "");
         reclog(Html_$T('GlWb::播放中: ') + '<span class="' + cls + '"></span>');
         var audio = document.createElement("audio");
@@ -297,101 +250,18 @@
         }, 5000);
     };
 
-    /**上传  Upload**/
-    function recUpload() {
-        var blob = recBlob;
-        if (!blob) {
-            reclog(Html_$T("DUTn::请先录音，然后停止后再上传"), 1);
-            return;
-        }
-        ;
-
-        //本例子假设使用原始XMLHttpRequest请求方式，实际使用中自行调整为自己的请求方式
-        //录音结束时拿到了blob文件对象，可以用FileReader读取出内容，或者用FormData上传
-        var api = "http://127.0.0.1:9528";
-        var onreadystatechange = function (xhr, title) {
-            return function () {
-                if (xhr.readyState == 4) {
-                    if (xhr.status == 200) {
-                        reclog(title + Html_$T("G2MU::上传成功") + ' <span style="color:#999">response: ' + xhr.responseText + '</span>', 2);
-                    } else {
-                        reclog(title + Html_$T("TUdi::没有完成上传，演示上传地址无需关注上传结果，只要浏览器控制台内Network面板内看到的请求数据结构是预期的就ok了。"), "#d8c1a0");
-
-                        console.error(Html_xT(title + Html_$T("HjDi::上传失败")), xhr.status, xhr.responseText);
-                    }
-                    ;
-                }
-                ;
-            };
-        };
-        reclog(Html_$T("QnSI::开始上传到{1}，请稍候...", 0, api));
-
-        /***方式一：将blob文件转成base64纯文本编码，使用普通application/x-www-form-urlencoded表单上传***/
-        var reader = new FileReader();
-        reader.onloadend = function () {
-            var postData = "";
-            postData += "mime=" + encodeURIComponent(blob.type);//告诉后端，这个录音是什么格式的，可能前后端都固定的mp3可以不用写
-            postData += "&upfile_b64=" + encodeURIComponent((/.+;\s*base64\s*,\s*(.+)$/i.exec(reader.result) || [])[1]) //录音文件内容，后端进行base64解码成二进制
-            //...其他表单参数
-
-            var xhr = new XMLHttpRequest();
-            xhr.open("POST", api + "/uploadBase64");
-            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-            xhr.onreadystatechange = onreadystatechange(xhr, Html_$T("gG1f::上传方式一【Base64】"));
-            xhr.send(postData);
-        };
-        reader.readAsDataURL(blob);
-
-        /***方式二：使用FormData用multipart/form-data表单上传文件***/
-        var form = new FormData();
-        form.append("upfile", blob, "recorder.mp3"); //和普通form表单并无二致，后端接收到upfile参数的文件，文件名为recorder.mp3
-        //...其他表单参数
-
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", api + "/upload");
-        xhr.onreadystatechange = onreadystatechange(xhr, Html_$T("vDzB::上传方式二【FormData】"));
-        xhr.send(form);
-    };
-
-
     /**本地下载  Local download**/
     async function recLocalDown() {
         if (!recBlob) {
             reclog(Html_$T("M86h::请先录音，然后停止后再下载"), 1);
             return;
         }
-        // const pcmData = new Int8Array(await BlobToArrayBuffer(recBlob))
-        // Recorder.AMR.encode(pcmData, (e) => {
-        //     const href = URL.createObjectURL(new Blob([e]))
-        //     const fileName = "recorder-" + Date.now() + ".amr";
-        //     const box = document.createElement('a')
-        //     box.download = fileName
-        //     box.href = href
-        //     box.click()
-        //
-        // }, function (msg) {
-        //     reclog(Html_$T(msg), 1);
-        // }, 12.2)
         const href = URL.createObjectURL(recBlob)
         const fileName = "recorder-" + Date.now() + ".amr";
         const box = document.createElement('a')
         box.download = fileName
         box.href = href
         box.click()
-    };
-
-    function recdown64(cls) {
-        var el = document.querySelector("." + cls + "_b64");
-        if (recdown64.lastCls != cls) {
-            el.innerHTML = '<span style="color:red">' + Html_$T("eKKx::老的数据没有保存，只支持最新的一条") + '</span>';
-            return;
-        }
-        var reader = new FileReader();
-        reader.onloadend = function () {
-            el.innerHTML = '<textarea></textarea>';
-            el.querySelector("textarea").value = reader.result;
-        };
-        reader.readAsDataURL(recBlob);
     };
 
 
