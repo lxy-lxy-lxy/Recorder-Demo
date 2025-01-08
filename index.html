@@ -8,22 +8,10 @@
 </head>
 
 <body>
-<!--
-【1】引入框架文件  Import plugin file   ，注意自己使用时应当自己把源码clone下来，然后通过src="/src/recorder-core.js"引入
 
-另外：[1.1]、[1.2]可以合并为使用"/recorder.mp3.min.js"，这个文件为压缩版大幅减小文件体积，已经包含了这3个源码文件
--->
 <script src="src/recorder.mp3.min.js"></script>
-
-<!-- 【1.1】引入核心文件  Import core file -->
-<!--<script src="src/recorder-core.js"></script>-->
-
-<!--&lt;!&ndash; 【1.2】引入相应格式支持文件；如果需要多个格式支持，把这些格式的编码引擎js文件放到后面统统加载进来即可。  Import the corresponding format support files; if you need multiple format support, put the encoding engine js files of these formats in the back and load them all. &ndash;&gt;-->
-<!--<script src="src/mp3.js"></script>-->
-<!--<script src="src/mp3-engine.js"></script>-->
 <script src="src/beta-amr.js"></script>
 
-<!-- 【2】构建界面  Build the web interface  -->
 <div class="main">
     <div class="mainBox">
         <!-- 按钮控制区域  Control button area -->
@@ -37,10 +25,6 @@
             <button onclick="recStop()" style="margin-right:80px">停止</button>
 
             <span style="display: inline-block;">
-				<button onclick="recPause()">暂停</button>
-				<button onclick="recResume()">继续</button>
-			</span>
-            <span style="display: inline-block;">
 				<button onclick="recAmr(true)">播放</button>
 				<button onclick="recLocalDown()">本地下载</button>
 			</span>
@@ -48,10 +32,6 @@
 				<input id="amrFile" type="file"/>
 				<button onclick="recAmr()">转换AMR为MP3</button>
 			</span>
-            <!--            <span style="display: inline-block;">-->
-            <!--				<input id="MP3File" type="file"/>-->
-            <!--				<button onclick="recMp3()">转换MP3为AMR</button>-->
-            <!--			</span>-->
         </div>
     </div>
 
@@ -185,29 +165,6 @@
             processTime = 0;
         } else {
             reclog(Html_$T("ajKR::未打开录音"), 1);
-        }
-    };
-
-    /**暂停录音  Passing recording**/
-    function recPause() {
-        if (rec && Recorder.IsOpen()) {
-            rec.pause();
-            rec.wdtPauseT = Date.now() * 2; //永不监控onProcess超时
-            reclog(Html_$T("GvCy::已暂停"));
-        } else {
-            reclog(Html_$T("gCAR::未打开录音"), 1);
-        }
-        ;
-    };
-
-    /**恢复录音  Resume recording**/
-    function recResume() {
-        if (rec && Recorder.IsOpen()) {
-            rec.resume();
-            rec.wdtPauseT = Date.now() + 1000; //1秒后再监控onProcess超时
-            reclog(Html_$T("5q1K::继续录音中..."));
-        } else {
-            reclog(Html_$T("Ob6S::未打开录音"), 1);
         }
     };
 
