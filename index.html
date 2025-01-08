@@ -72,7 +72,7 @@
         rec = null;
         recBlob = null;
         var newRec = Recorder({
-            type: "mp3", sampleRate: 16000, bitRate: 16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
+            type: "amr", sampleRate: 8000, bitRate: 12.2 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
             , onProcess: function (
                 // buffers, powerLevel, bufferDuration, bufferSampleRate, newBufferIdx, asyncEnd
             ) {
@@ -371,9 +371,9 @@
         //
         // }, function (msg) {
         //     reclog(Html_$T(msg), 1);
-        // }, 12.8)
+        // }, 12.2)
         const href = URL.createObjectURL(recBlob)
-        const fileName = "recorder-" + Date.now() + ".mp3";
+        const fileName = "recorder-" + Date.now() + ".amr";
         const box = document.createElement('a')
         box.download = fileName
         box.href = href
