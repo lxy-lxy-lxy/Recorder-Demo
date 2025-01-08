@@ -50,6 +50,10 @@
 				<input id="amrFile" type="file"/>
 				<button onclick="recAmr()">转换AMR为MP3</button>
 			</span>
+<!--            <span style="display: inline-block;">-->
+<!--				<input id="MP3File" type="file"/>-->
+<!--				<button onclick="recMp3()">转换MP3为AMR</button>-->
+<!--			</span>-->
         </div>
     </div>
 
@@ -141,6 +145,16 @@
     //         reader.readAsDataURL(blob);
     //     });
     // };
+    function BlobToArrayBuffer(blob) {
+        //return await blob.arrayBuffer();
+        return new Promise(function (resolve) {
+            var reader = new FileReader();
+            reader.onloadend = function () {
+                resolve(reader.result);
+            };
+            reader.readAsArrayBuffer(blob);
+        });
+    };
 
     // amr转mp3播放(base64,或直接使用blob)
     async function recAmr() {
@@ -167,6 +181,24 @@
             reclog(Html_$T(msg), 1);
         });
     }
+
+    // async function recMp3() {
+    //     const file = document.getElementById("MP3File").files[0];
+    //     const blob = new Blob([file], {type: file.type});
+    //     console.log(await BlobToArrayBuffer(file))
+    //     const pcmData = new Int16Array(await BlobToArrayBuffer(blob))
+    //     Recorder.AMR.encode(pcmData, (e) => {
+    //         const href = URL.createObjectURL(new Blob([e]))
+    //         const fileName = "recorder-" + Date.now() + ".amr";
+    //         const box = document.createElement('a')
+    //         box.download = fileName
+    //         box.href = href
+    //         box.click()
+    //
+    //     }, function (msg) {
+    //         reclog(Html_$T(msg), 1);
+    //     }, 12.2)
+    // }
 
     function base64_to_pcm(base64) {
         const str = atob(base64);
@@ -329,30 +361,18 @@
             reclog(Html_$T("M86h::请先录音，然后停止后再下载"), 1);
             return;
         }
-        var cls = ("a" + Math.random()).replace(".", "");
-        recdown64.lastCls = cls;
-        reclog(Html_$T('vJPl::点击 ') + '<span class="' + cls + '"></span>' + Html_$T('Whtc:: 下载，或复制文本')
-            + '<button onclick="recdown64(\'' + cls + '\')">' + Html_$T('XK4l::生成Base64文本') + '</button><span class="' + cls + '_b64"></span>');
+        const pcmData = new Int16Array(await BlobToArrayBuffer(recBlob))
+        Recorder.AMR.encode(pcmData, (e) => {
+            const href = URL.createObjectURL(new Blob([e]))
+            const fileName = "recorder-" + Date.now() + ".amr";
+            const box = document.createElement('a')
+            box.download = fileName
+            box.href = href
+            box.click()
 
-        // const pcmData = new Int16Array(await recBlob.arrayBuffer())
-        // Recorder.AMR.encode(pcmData, (e) => {
-        //     var fileName = "recorder-" + Date.now() + ".mp3";
-        //     var downA = document.createElement("A");
-        //     downA.innerHTML = Html_$T("g8Fy::下载 ") + fileName;
-        //     downA.href = (window.URL || webkitURL).createObjectURL(new Blob([e]));
-        //     downA.download = fileName;
-        //     document.querySelector("." + cls).appendChild(downA);
-        //     downA.click();
-        // }, function (msg) {
-        //     reclog(Html_$T(msg), 1);
-        // }, 12.2)
-        var fileName = "recorder-" + Date.now() + ".mp3";
-        var downA = document.createElement("A");
-        downA.innerHTML = Html_$T("g8Fy::下载 ") + fileName;
-        downA.href = (window.URL || webkitURL).createObjectURL(recBlob);
-        downA.download = fileName;
-        document.querySelector("." + cls).appendChild(downA);
-        downA.click();
+        }, function (msg) {
+            reclog(Html_$T(msg), 1);
+        }, 12.2)
     };
 
     function recdown64(cls) {
