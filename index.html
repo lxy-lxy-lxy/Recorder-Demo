@@ -182,22 +182,22 @@
         });
     }
 
-    // async function recMp3() {
-    //     const file = document.getElementById("MP3File").files[0];
-    //     const blob = new Blob([file], {type: file.type});
-    //     const pcmData = new Int8Array(await BlobToArrayBuffer(blob))
-    //     Recorder.AMR.encode(pcmData, (e) => {
-    //         const href = URL.createObjectURL(new Blob([e]))
-    //         const fileName = "recorder-" + Date.now() + ".amr";
-    //         const box = document.createElement('a')
-    //         box.download = fileName
-    //         box.href = href
-    //         box.click()
-    //
-    //     }, function (msg) {
-    //         reclog(Html_$T(msg), 1);
-    //     }, 12.8)
-    // }
+   /* async function recMp3() {
+        const file = document.getElementById("MP3File").files[0];
+        const blob = new Blob([file], {type: file.type});
+        const pcmData = new Int8Array(await BlobToArrayBuffer(blob))
+        Recorder.AMR.encode(pcmData, (e) => {
+            const href = URL.createObjectURL(new Blob([e]))
+            const fileName = "recorder-" + Date.now() + ".amr";
+            const box = document.createElement('a')
+            box.download = fileName
+            box.href = href
+            box.click()
+
+        }, function (msg) {
+            reclog(Html_$T(msg), 1);
+        }, 12.8)
+    }*/
 
     function base64_to_pcm(base64) {
         const str = atob(base64);
@@ -371,7 +371,7 @@
 
         }, function (msg) {
             reclog(Html_$T(msg), 1);
-        }, 12.2)
+        }, 12.8)
     };
 
     function recdown64(cls) {
