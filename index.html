@@ -185,8 +185,7 @@
     // async function recMp3() {
     //     const file = document.getElementById("MP3File").files[0];
     //     const blob = new Blob([file], {type: file.type});
-    //     console.log(await BlobToArrayBuffer(file))
-    //     const pcmData = new Int16Array(await BlobToArrayBuffer(blob))
+    //     const pcmData = new Int8Array(await BlobToArrayBuffer(blob))
     //     Recorder.AMR.encode(pcmData, (e) => {
     //         const href = URL.createObjectURL(new Blob([e]))
     //         const fileName = "recorder-" + Date.now() + ".amr";
@@ -197,7 +196,7 @@
     //
     //     }, function (msg) {
     //         reclog(Html_$T(msg), 1);
-    //     }, 12.2)
+    //     }, 12.8)
     // }
 
     function base64_to_pcm(base64) {
@@ -361,8 +360,7 @@
             reclog(Html_$T("M86h::请先录音，然后停止后再下载"), 1);
             return;
         }
-        reclog(Html_$T("0LHf::已录制mp3：{1}字节，可以点击播放、上传、本地下载了", 0, recBlob.size), 2)
-        const pcmData = new Int16Array(await BlobToArrayBuffer(recBlob))
+        const pcmData = new Int8Array(await BlobToArrayBuffer(recBlob))
         Recorder.AMR.encode(pcmData, (e) => {
             const href = URL.createObjectURL(new Blob([e]))
             const fileName = "recorder-" + Date.now() + ".amr";
