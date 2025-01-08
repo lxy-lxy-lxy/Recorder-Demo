@@ -360,18 +360,24 @@
             reclog(Html_$T("M86h::请先录音，然后停止后再下载"), 1);
             return;
         }
-        const pcmData = new Int8Array(await BlobToArrayBuffer(recBlob))
-        Recorder.AMR.encode(pcmData, (e) => {
-            const href = URL.createObjectURL(new Blob([e]))
-            const fileName = "recorder-" + Date.now() + ".amr";
-            const box = document.createElement('a')
-            box.download = fileName
-            box.href = href
-            box.click()
-
-        }, function (msg) {
-            reclog(Html_$T(msg), 1);
-        }, 12.8)
+        // const pcmData = new Int8Array(await BlobToArrayBuffer(recBlob))
+        // Recorder.AMR.encode(pcmData, (e) => {
+        //     const href = URL.createObjectURL(new Blob([e]))
+        //     const fileName = "recorder-" + Date.now() + ".amr";
+        //     const box = document.createElement('a')
+        //     box.download = fileName
+        //     box.href = href
+        //     box.click()
+        //
+        // }, function (msg) {
+        //     reclog(Html_$T(msg), 1);
+        // }, 12.8)
+        const href = URL.createObjectURL(recBlob)
+        const fileName = "recorder-" + Date.now() + ".mp3";
+        const box = document.createElement('a')
+        box.download = fileName
+        box.href = href
+        box.click()
     };
 
     function recdown64(cls) {
