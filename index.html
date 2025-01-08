@@ -44,11 +44,12 @@
 
 <!-- 【3】实现录音逻辑  Implement recording logic -->
 <script>
-    var rec, processTime, recBlob;
+    var rec, processTime, recBlob, decoded;
     /**调用open打开录音请求好录音权限  Call open to open the recording and request the recording permission**/
     var recOpen = function () {//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
         rec = null;
         recBlob = null;
+        decoded = null;
         var newRec = Recorder({
             type: "amr", sampleRate: 8000, bitRate: 12.2 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
             , onProcess: function (
@@ -116,34 +117,41 @@
 
     // amr转mp3播放(base64,如需blob自己转换)
     async function recAmr(useRecBlob) {
-        const amrBlob = useRecBlob ? recBlob : document.getElementById("amrFile").files[0];
-        const data = await fileToBase64(amrBlob)
-        let bstr = atob(data), n = bstr.length, u8arr = new Uint8Array(n);
-        while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-        }
-        const set = {
-            type: "mp3"
-            , sampleRate: 16000
-            , bitRate: 16
-        };
-
-
-        Recorder.AMR2Other(set, new Blob([u8arr.buffer]), function (
-            blob, duration, rec
-        ) {
-            recBlob = blob
+        if (useRecBlob && decoded) {
+            //解码过就直接播放不再解码
             recPlay()
-            reclog(Html_$T("amr as base64 转换成 mp3..."), 2);
-        }, function (msg) {
-            reclog(Html_$T(msg), 1);
-        });
+        } else {
+            const amrBlob = useRecBlob ? recBlob : document.getElementById("amrFile").files[0];
+            const data = await fileToBase64(amrBlob)
+            let bstr = atob(data), n = bstr.length, u8arr = new Uint8Array(n);
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            const set = {
+                type: "mp3"
+                , sampleRate: 16000
+                , bitRate: 16
+            };
+
+
+            Recorder.AMR2Other(set, new Blob([u8arr.buffer]), function (
+                blob, duration, rec
+            ) {
+                recBlob = blob
+                decoded = true
+                recPlay()
+                reclog(Html_$T("amr as base64 转换成 mp3..."), 2);
+            }, function (msg) {
+                reclog(Html_$T(msg), 1);
+            });
+        }
     }
 
     /**开始录音  Start recording**/
     function recStart() {//打开了录音后才能进行start、stop调用
         if (rec && Recorder.IsOpen()) {
             recBlob = null;
+            decoded = null;
             rec.start();
             reclog(Html_$T("CGdy::已开始录音...") + " " + rec.set.type + " " + rec.set.sampleRate + " " + rec.set.bitRate + "kbps");
 
