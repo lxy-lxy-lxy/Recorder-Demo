@@ -170,7 +170,7 @@
                 }
                 const amr = AMR.encode(pcm, audioBuffer.sampleRate, 7);
 
-                const href = URL.createObjectURL(amr)
+                const href = (window.URL || webkitURL).createObjectURL(amr)
                 const fileName = "recorder-" + Date.now() + ".amr";
                 const box = document.createElement('a')
                 box.download = fileName
