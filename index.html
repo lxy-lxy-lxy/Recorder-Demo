@@ -29,7 +29,7 @@
 				<button onclick="recLocalDown()">本地下载</button>
 			</span>
             <span style="display: inline-block;">
-				<input id="amrFile" type="file"/>
+				<input id="amrFile" type="file" accept=".amr"/>
 				<button onclick="playAmrBlob()">转换AMR为MP3</button>
 			</span>
         </div>
@@ -168,9 +168,9 @@
                 } else {
                     pcm = audioBuffer.getChannelData(0);
                 }
-                const amr = AMR.encode(pcm, audioBuffer.sampleRate, 7);
+                const amr = AMR.encode(pcm, audioBuffer.sampleRate / 2, 7);
 
-                const href = (window.URL || webkitURL).createObjectURL(amr)
+                const href = (window.URL || webkitURL).createObjectURL(new Blob([amr]))
                 const fileName = "recorder-" + Date.now() + ".amr";
                 const box = document.createElement('a')
                 box.download = fileName
@@ -180,11 +180,11 @@
         });
     }
 
-    function pcm_to_mp3(pcm, sampleRate) { //pcm:Int16Array
-        const newSampleRate = sampleRate; //可转换成你需要的采样率
+    function pcm_to_mp3(pcm) { //pcm:Int16Array
+        // const newSampleRate = sampleRate; //可转换成你需要的采样率
 
-        const recMock = Recorder({type: "mp3", sampleRate: newSampleRate, bitRate: 16});
-        recMock.mock(pcm, sampleRate);
+        const recMock = Recorder({type: "mp3", bitRate: 16});
+        recMock.mock(pcm);
         //recMock.dataType="arraybuffer"; //下面stop默认返回blob文件，可以改成返回ArrayBuffer
         recMock.stop(function (blob, duration) {
             recBlob = blob
