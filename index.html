@@ -30,8 +30,16 @@
 				<button onclick="recLocalDown()">本地下载</button>
 			</span>
             <span style="display: inline-block;">
+                测试1
 				<input id="amrFile" type="file" accept=".amr"/>
 				<button onclick="playAmrBlob()">转换AMR为MP3</button>
+			</span>
+            <p></p>
+            <span style="display: flex;">
+                测试2
+				<textarea id="amrFileBase64" rows="5" placeholder="输入base64"
+                          style="margin: 0 5px;width:245px"></textarea>
+				<button onclick="base64toBlob()">转换AMR为MP3</button>
 			</span>
         </div>
     </div>
@@ -45,12 +53,11 @@
 
 <!-- 【3】实现录音逻辑  Implement recording logic -->
 <script>
-    var rec, processTime, recBlob, decoded;
+    var rec, processTime, recBlob;
     /**调用open打开录音请求好录音权限  Call open to open the recording and request the recording permission**/
     var recOpen = function () {//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
         rec = null;
         recBlob = null;
-        decoded = null;
         var newRec = Recorder({
             type: "mp3", sampleRate: 8000, bitRate: 12.2 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
             , onProcess: function (
@@ -84,7 +91,6 @@
     function recStart() {//打开了录音后才能进行start、stop调用
         if (rec && Recorder.IsOpen()) {
             recBlob = null;
-            decoded = null;
             rec.start();
             reclog(Html_$T("CGdy::已开始录音...") + " " + rec.set.type + " " + rec.set.sampleRate + " " + rec.set.bitRate + "kbps");
 
@@ -203,11 +209,22 @@
         pcm_to_mp3(samples, 8000);
     }
 
-    function playAmrBlob() {
-        const blob = document.getElementById("amrFile").files[0];
+    function playAmrBlob(dataBlob) {
+        const blob = dataBlob || document.getElementById("amrFile").files[0];
         readBlob(blob, function (data) {
             playAmrArray(data);
         });
+    }
+
+    function base64toBlob() {
+        const base64 = document.getElementById("amrFileBase64").value;
+        var byteCharacters = atob(base64);
+        var byteArrays = [];
+        for (var i = 0; i < byteCharacters.length; i++) {
+            byteArrays.push(byteCharacters.charCodeAt(i));
+        }
+        var byteArray = new Uint8Array(byteArrays);
+        playAmrBlob(new Blob([byteArray]))
     }
 
     /**本地下载  Local download**/
