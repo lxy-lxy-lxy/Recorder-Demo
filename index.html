@@ -173,6 +173,7 @@
                 } else {
                     pcm = audioBuffer.getChannelData(0);
                 }
+                // 录制的MP3 16000HZ, 转8000HZ AMR 需要sampleRate / 2，否则时长翻倍
                 const amr = AMR.encode(pcm, audioBuffer.sampleRate / 2, 7);
 
                 const href = (window.URL || webkitURL).createObjectURL(new Blob([amr]))
