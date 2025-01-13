@@ -159,7 +159,7 @@
 
     function convertAudioBlobToAmr(blob) {
         readBlob(blob, function (data) {
-            var ctx = getAudioContext();
+            var ctx = new AudioContext();
             ctx.decodeAudioData(data.buffer, function (audioBuffer) {
                 var pcm;
                 if (audioBuffer.copyFromChannel) {
