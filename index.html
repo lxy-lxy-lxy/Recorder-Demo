@@ -51,7 +51,7 @@
         recBlob = null;
         decoded = null;
         var newRec = Recorder({
-            type: "mp3", sampleRate: 16000, bitRate: 16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
+            type: "mp3", sampleRate: 8000, bitRate: 12.2 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
             , onProcess: function (
                 // buffers, powerLevel, bufferDuration, bufferSampleRate, newBufferIdx, asyncEnd
             ) {
@@ -117,7 +117,6 @@
         ;
         rec.watchDogTimer = 0; //停止监控onProcess超时
         rec.stop(function (blob, duration) {
-            console.log(blob, (window.URL || webkitURL).createObjectURL(blob), Html_xT(Html_$T("gOix::时长:{1}ms", 0, duration)));
 
             recBlob = blob;
             reclog(Html_$T("0LHf::已录制mp3：{1}ms {2}字节，可以点击播放、上传、本地下载了", 0, duration, blob.size), 2);
@@ -168,7 +167,7 @@
                 } else {
                     pcm = audioBuffer.getChannelData(0);
                 }
-                const amr = AMR.encode(pcm, audioBuffer.sampleRate / 2, 7);
+                const amr = AMR.encode(pcm, audioBuffer.sampleRate, 7);
 
                 const href = (window.URL || webkitURL).createObjectURL(new Blob([amr]))
                 const fileName = "recorder-" + Date.now() + ".amr";
@@ -183,7 +182,7 @@
     function pcm_to_mp3(pcm, sampleRate) { //pcm:Int16Array
         // const newSampleRate = sampleRate; //可转换成你需要的采样率
 
-        const recMock = Recorder({type: "mp3", sampleRate, bitRate: 16});
+        const recMock = Recorder({type: "mp3", sampleRate, bitRate: 12.2});
         recMock.mock(pcm, sampleRate);
         //recMock.dataType="arraybuffer"; //下面stop默认返回blob文件，可以改成返回ArrayBuffer
         recMock.stop(function (blob, duration) {
@@ -192,7 +191,7 @@
         }, function (msg) {
             reclog(Html_$T(msg), 1)
         });
-    };
+    }
 
     function playAmrArray(array) {
         var samples = AMR.decode(array);
@@ -200,7 +199,7 @@
             alert('Failed to decode!');
             return;
         }
-        pcm_to_mp3(samples, 16000);
+        pcm_to_mp3(samples, 8000);
     }
 
     function playAmrBlob() {
