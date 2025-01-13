@@ -16,6 +16,7 @@
     <div class="mainBox">
         <!-- 按钮控制区域  Control button area -->
         <div class="pd btns">
+            <div><b>采样率定死8000HZ，播放时长不一样请使用 8000HZ 采样率的amr样本测试</b></div>
             <div>
                 <button onclick="recOpen()" style="margin-right:10px">打开录音,请求权限</button>
                 <button onclick="recClose()" style="margin-right:0">关闭录音,释放资源</button>
@@ -24,7 +25,6 @@
             <button onclick="recStart()">录制</button>
             <button onclick="recStop()" style="margin-right:80px">停止</button>
 
-            采样率定死8000HZ，播放时长不一样请使用 8000HZ 采样率的amr样本测试
             <span style="display: inline-block;">
 				<button onclick="recPlay()">播放</button>
 				<button onclick="recLocalDown()">本地下载</button>
@@ -59,7 +59,7 @@
         rec = null;
         recBlob = null;
         var newRec = Recorder({
-            type: "mp3", sampleRate: 8000, bitRate: 12.2 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
+            type: "mp3", sampleRate: 8000, bitRate: 16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
             , onProcess: function (
                 // buffers, powerLevel, bufferDuration, bufferSampleRate, newBufferIdx, asyncEnd
             ) {
@@ -189,7 +189,7 @@
     function pcm_to_mp3(pcm, sampleRate) { //pcm:Int16Array
         // const newSampleRate = sampleRate; //可转换成你需要的采样率
 
-        const recMock = Recorder({type: "mp3", sampleRate, bitRate: 12.2});
+        const recMock = Recorder({type: "mp3", sampleRate, bitRate: 16});
         recMock.mock(pcm, sampleRate);
         //recMock.dataType="arraybuffer"; //下面stop默认返回blob文件，可以改成返回ArrayBuffer
         recMock.stop(function (blob, duration) {
