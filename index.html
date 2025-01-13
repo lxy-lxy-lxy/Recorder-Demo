@@ -180,11 +180,11 @@
         });
     }
 
-    function pcm_to_mp3(pcm) { //pcm:Int16Array
+    function pcm_to_mp3(pcm, sampleRate) { //pcm:Int16Array
         // const newSampleRate = sampleRate; //可转换成你需要的采样率
 
-        const recMock = Recorder({type: "mp3", bitRate: 16});
-        recMock.mock(pcm);
+        const recMock = Recorder({type: "mp3", sampleRate, bitRate: 16});
+        recMock.mock(pcm, sampleRate);
         //recMock.dataType="arraybuffer"; //下面stop默认返回blob文件，可以改成返回ArrayBuffer
         recMock.stop(function (blob, duration) {
             recBlob = blob
