@@ -51,7 +51,7 @@
         recBlob = null;
         decoded = null;
         var newRec = Recorder({
-            type: "amr", sampleRate: 8000, bitRate: 12.2 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
+            type: "mp3", sampleRate: 16000, bitRate: 16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
             , onProcess: function (
                 // buffers, powerLevel, bufferDuration, bufferSampleRate, newBufferIdx, asyncEnd
             ) {
@@ -68,21 +68,6 @@
             reclog((isUserNotAllow ? "UserNotAllow, " : "") + Html_$T("TOOV::打开录音失败：") + msg, 1);
         });
     };
-
-    Recorder.AMR2Other = function (newSet, amrBlob, True, False) {
-        var reader = new FileReader();
-        reader.onload = function () {
-            var amr = new Uint8Array(reader.result);
-            Recorder.AMR.decode(amr, function (pcm) {
-                var rec = Recorder(newSet).mock(pcm, 8000);
-                rec.stop(function (blob, duration) {
-                    True(blob, duration, rec);
-                }, False);
-            }, False);
-        };
-        reader.readAsArrayBuffer(amrBlob);
-    };
-
 
     /**关闭录音，释放资源  Close recording, release resources**/
     function recClose() {
@@ -188,7 +173,7 @@
             console.log(blob, (window.URL || webkitURL).createObjectURL(blob), Html_xT(Html_$T("gOix::时长:{1}ms", 0, duration)));
 
             recBlob = blob;
-            reclog(Html_$T("0LHf::已录制mp3：{1}ms {2}字节，可以点击播放、上传、本地下载了", 0, formatMs(duration), blob.size), 2);
+            reclog(Html_$T("0LHf::已录制mp3：{1}ms {2}字节，可以点击播放、上传、本地下载了", 0, duration, blob.size), 2);
         }, function (msg) {
             reclog(Html_$T("kGZO::录音失败:") + msg, 1);
         });
@@ -215,35 +200,48 @@
         }, 5000);
     };
 
+
+    function readBlob(blob, callback) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var data = new Uint8Array(e.target.result);
+            callback(data);
+        };
+        reader.readAsArrayBuffer(blob);
+    }
+
+    function convertAudioBlobToAmr(blob) {
+        readBlob(blob, function(data) {
+            var ctx = getAudioContext();
+            ctx.decodeAudioData(data.buffer, function(audioBuffer) {
+                var pcm;
+                if (audioBuffer.copyFromChannel) {
+                    pcm = new Float32Array(audioBuffer.length);
+                    audioBuffer.copyFromChannel(pcm, 0, 0);
+                } else {
+                    pcm = audioBuffer.getChannelData(0);
+                }
+                const amr = AMR.encode(pcm, audioBuffer.sampleRate, 7);
+
+                const href = URL.createObjectURL(amr)
+                const fileName = "recorder-" + Date.now() + ".amr";
+                const box = document.createElement('a')
+                box.download = fileName
+                box.href = href
+                box.click()
+            });
+        });
+    }
+
     /**本地下载  Local download**/
     async function recLocalDown() {
         if (!recBlob) {
             reclog(Html_$T("M86h::请先录音，然后停止后再下载"), 1);
             return;
         }
-        const href = URL.createObjectURL(recBlob)
-        const fileName = "recorder-" + Date.now() + ".amr";
-        const box = document.createElement('a')
-        box.download = fileName
-        box.href = href
-        box.click()
-    };
 
-
-    var formatMs = function (ms, all) {
-        var ss = ms % 1000;
-        ms = (ms - ss) / 1000;
-        var s = ms % 60;
-        ms = (ms - s) / 60;
-        var m = ms % 60;
-        ms = (ms - m) / 60;
-        var h = ms;
-        var t = (h ? h + ":" : "")
-            + (all || h + m ? ("0" + m).substr(-2) + ":" : "")
-            + (all || h + m + s ? ("0" + s).substr(-2) + "″" : "")
-            + ("00" + ss).substr(-3);
-        return t;
-    };
+        convertAudioBlobToAmr(recBlob)
+    }
 </script>
 
 
@@ -351,16 +349,6 @@
 
     .pd {
         padding: 0 0 6px 0;
-    }
-
-    .lb {
-        display: inline-block;
-        vertical-align: middle;
-        background: #00940e;
-        color: #fff;
-        font-size: 14px;
-        padding: 2px 8px;
-        border-radius: 99px;
     }
 </style>
 
