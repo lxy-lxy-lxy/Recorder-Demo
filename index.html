@@ -16,7 +16,6 @@
     <div class="mainBox">
         <!-- 按钮控制区域  Control button area -->
         <div class="pd btns">
-            <div><b>采样率定死8000HZ，播放时长不一样请使用 8000HZ 采样率的amr样本测试</b></div>
             <div>
                 <button onclick="recOpen()" style="margin-right:10px">打开录音,请求权限</button>
                 <button onclick="recClose()" style="margin-right:0">关闭录音,释放资源</button>
@@ -59,7 +58,7 @@
         rec = null;
         recBlob = null;
         var newRec = Recorder({
-            type: "mp3", sampleRate: 8000, bitRate: 16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
+            type: "mp3", sampleRate: 16000, bitRate: 16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
             , onProcess: function (
                 // buffers, powerLevel, bufferDuration, bufferSampleRate, newBufferIdx, asyncEnd
             ) {
@@ -174,7 +173,7 @@
                 } else {
                     pcm = audioBuffer.getChannelData(0);
                 }
-                const amr = AMR.encode(pcm, audioBuffer.sampleRate, 7);
+                const amr = AMR.encode(pcm, audioBuffer.sampleRate / 2, 7);
 
                 const href = (window.URL || webkitURL).createObjectURL(new Blob([amr]))
                 const fileName = "recorder-" + Date.now() + ".amr";
@@ -206,7 +205,7 @@
             alert('Failed to decode!');
             return;
         }
-        pcm_to_mp3(samples, 8000);
+        pcm_to_mp3(samples, 16000);
     }
 
     function playAmrBlob(dataBlob) {
