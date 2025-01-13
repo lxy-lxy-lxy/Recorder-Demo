@@ -25,12 +25,12 @@
             <button onclick="recStop()" style="margin-right:80px">停止</button>
 
             <span style="display: inline-block;">
-				<button onclick="recAmr(true)">播放</button>
+				<button onclick="recPlay()">播放</button>
 				<button onclick="recLocalDown()">本地下载</button>
 			</span>
             <span style="display: inline-block;">
 				<input id="amrFile" type="file"/>
-				<button onclick="recAmr()">转换AMR为MP3</button>
+				<button onclick="playAmrBlob()">转换AMR为MP3</button>
 			</span>
         </div>
     </div>
@@ -76,59 +76,6 @@
             reclog(Html_$T("jqOs::已关闭"));
         } else {
             reclog(Html_$T("VOOw::未打开录音"), 1);
-        }
-    };
-
-    function fileToBase64(file) {
-        return new Promise((resolve, reject) => {
-            // 创建一个新的 FileReader 对象
-            const reader = new FileReader();
-            // 读取 File 对象
-            reader.readAsDataURL(file);
-            // 加载完成后
-            reader.onload = function () {
-                // 将读取的数据转换为 base64 编码的字符串
-                const base64String = reader.result.split(",")[1];
-                // 解析为 Promise 对象，并返回 base64 编码的字符串
-                resolve(base64String);
-            };
-
-            // 加载失败时
-            reader.onerror = function () {
-                reject(new Error("Failed to load file"));
-            };
-        });
-    }
-
-    // amr转mp3播放(base64,如需blob自己转换)
-    async function recAmr(useRecBlob) {
-        if (useRecBlob && decoded) {
-            //解码过就直接播放不再解码
-            recPlay()
-        } else {
-            const amrBlob = useRecBlob ? recBlob : document.getElementById("amrFile").files[0];
-            const data = await fileToBase64(amrBlob)
-            let bstr = atob(data), n = bstr.length, u8arr = new Uint8Array(n);
-            while (n--) {
-                u8arr[n] = bstr.charCodeAt(n);
-            }
-            const set = {
-                type: "mp3"
-                , sampleRate: 16000
-                , bitRate: 16
-            };
-
-
-            Recorder.AMR2Other(set, new Blob([u8arr.buffer]), function (
-                blob, duration, rec
-            ) {
-                recBlob = blob
-                decoded = true
-                recPlay()
-                reclog(Html_$T("amr as base64 转换成 mp3..."), 2);
-            }, function (msg) {
-                reclog(Html_$T(msg), 1);
-            });
         }
     }
 
@@ -203,7 +150,7 @@
 
     function readBlob(blob, callback) {
         var reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             var data = new Uint8Array(e.target.result);
             callback(data);
         };
@@ -211,9 +158,9 @@
     }
 
     function convertAudioBlobToAmr(blob) {
-        readBlob(blob, function(data) {
+        readBlob(blob, function (data) {
             var ctx = getAudioContext();
-            ctx.decodeAudioData(data.buffer, function(audioBuffer) {
+            ctx.decodeAudioData(data.buffer, function (audioBuffer) {
                 var pcm;
                 if (audioBuffer.copyFromChannel) {
                     pcm = new Float32Array(audioBuffer.length);
@@ -230,6 +177,36 @@
                 box.href = href
                 box.click()
             });
+        });
+    }
+
+    function pcm_to_mp3(pcm, sampleRate) { //pcm:Int16Array
+        const newSampleRate = sampleRate; //可转换成你需要的采样率
+
+        const recMock = Recorder({type: "mp3", sampleRate: newSampleRate, bitRate: 16});
+        recMock.mock(pcm, sampleRate);
+        //recMock.dataType="arraybuffer"; //下面stop默认返回blob文件，可以改成返回ArrayBuffer
+        recMock.stop(function (blob, duration) {
+            recBlob = blob
+            recPlay()
+        }, function (msg) {
+            reclog(Html_$T(msg), 1)
+        });
+    };
+
+    function playAmrArray(array) {
+        var samples = AMR.decode(array);
+        if (!samples) {
+            alert('Failed to decode!');
+            return;
+        }
+        pcm_to_mp3(samples, 16000);
+    }
+
+    function playAmrBlob() {
+        const blob = document.getElementById("amrFile").files[0];
+        readBlob(blob, function (data) {
+            playAmrArray(data);
         });
     }
 
